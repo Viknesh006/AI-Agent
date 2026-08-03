@@ -3,13 +3,18 @@ import { auth } from "@clerk/nextjs/server";
 import Razorpay from "razorpay";
 import { PRICING_PLANS } from "@/lib/constants";
 
-const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+function getRazorpayClient() {
+  const keyId = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? process.env.RAZORPAY_KEY_ID ?? "").trim();
+  const keySecret = (process.env.RAZORPAY_KEY_SECRET ?? "").trim();
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay credentials are not configured in environment variables.");
+  }
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const razorpay = getRazorpayClient();
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
